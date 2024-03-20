@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <canvas id="canvas" width="400" height="400" />
+    <script src="perceptron.js"></script>
+    <script>
+        const training = new Array(2000);
+        let ptron;
+        let count = 0;
+        const xmin = -1;
+        const ymin = -1;
+        const xmax = 1;
+        const ymax = 1;
+        const canvas = document.querySelector('#canvas');
+        const ctx = canvas.getContext("2d");
+
+        function f(x){
+            const y = 0.3 * x + 0.4;
+            return y;
+        }
+
+        function drawLine(x1, y1, x2, y2){
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        function setup() {
+            ptron = new Perceptron(3, 0.001);
+
+            for (let i = 0; i < training.length; i++) {
+                const x = Math.random() * (xmax - xmin) + xmin;
+                const y = Math.random() * (ymax - ymin) + ymin;
+                let answer = 1;
+                if (y < f(x)) answer = -1;
+                training[i] = {
+                    inputs: [x, y, 1],
+                    output: answer
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            ctx.strokeStyle = "red";
+            
+            const weights = ptron.getWeights();
+            let x1 = xmin;
+            let y1 = (-weights[2] - weights[0] * x1) / weights[1];
+            let x2 = xmax;
+            let y2 = (-weights[2] - weights[0] * x2) / weights[1];
+            drawLine(
+                map(x1, xmin, xmax, 0, canvas.width),
+                map(y1, ymin, ymax, canvas.height, 0),
+                map(x2, xmin, xmax, 0, canvas.width),
+                map(y2, ymin, ymax, canvas.height, 0),
+            );
+
+            // Train the pertron one point at a time.
+            ptron.train(training[count].inputs, training[count].output);
+            count = (count + 1) % training.length;
+
+            // Learning to use existing
+            for (let i = 0; i < count; i++) {
+                ctx.fillStyle = "#ffffff";
+                const guess = ptron.feedForward(training[i].inputs);
+                if (guess > 0) ctx.fillStyle = "#000000";
+
+                const x = map(training[i].inputs[0], xmin, xmax, 0, canvas.width);
+                const y = map(training[i].inputs[1], ymin, ymax, canvas.height, 0);
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function map(value, start1, stop1, start2, stop2) {
+            return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+        }
+
+        setup();
+        setInterval(draw, 10);
+    </script>
+</body>
+</html>
+
+<style>
+    :root{
+        background-color: #3f3f3f;
+    }
+</style>
